@@ -7,4 +7,6 @@ The echo.py is meant to emulate the echo of an open space, it takes user input a
 
 
 ### fib.py
-
+fib calculates the fibonacci sequence from 1 to a given number n, recording runtime for each value of n and graphing the result. The program uses a decorator called timer to record the runtime of each step and print the result running the fib function for the fibonacci sequence, which is then made into a graph in main using the mtaplot library. The program uses least recently used cahching as well to massively improve runtime. This holds previous results of fib(n) so that they don't need to be recalculated, creating a more linear runtime rather than the exponential increase we see normally. This also prevents the overloading of print statements that would be created from recursion functions running. The runtime varies slightly but maintains a relatively similar magnntude of 100th of a second. The grpah of runtimes is shown below.
+<img width="2400" height="1200" alt="image" src="https://github.com/user-attachments/assets/4652a6f6-f089-44ba-828b-e53ad9d88ff4" />
+In this graph we can see a linear relationship with slight deviations, possibly due to other applications running at the same time. Without caching we would to exponential increase due to continuous recalculations of previous steps

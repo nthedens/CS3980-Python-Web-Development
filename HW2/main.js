@@ -9,7 +9,7 @@
         const response =  await fetch(API_URL);
         //check response
         if (!response.ok) {
-            throw new Error('HTTP error! Status: ${response.status}');
+            throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
         const jsonPopData= await response.json();
@@ -21,7 +21,7 @@
         // Build the table 
         
         let tableHTML = `
-            <table class="custom-table">
+            <table class="population-table">
                 <thead>
                      <tr>
                          <th>Year</th>

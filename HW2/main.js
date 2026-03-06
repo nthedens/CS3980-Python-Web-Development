@@ -1,7 +1,7 @@
 (function () {
    
    
-   //API_URL
+   //API_URL and html table 
    const API_URL='https://api.datausa.io/tesseract/data.jsonrecords?cube=acs_yg_total_population_5&measures=Population&drilldowns=Year';
    const container = document.getElementById('table-container');
    async function fetchPopulation() {
@@ -30,6 +30,7 @@
                 </thead>
                 <tbody>
         `;
+      // loop through and format data to table
     for (let i =0; i<PopDataArray.length;i++){
         let yearVal = PopDataArray[i].Year;
         let populationVal = PopDataArray[i].Population.toLocaleString();
@@ -40,11 +41,14 @@
         </tr>
         `;
     }
+       // close table
     tableHTML += `
             </tbody>
         </table>
         `;
+       // insert into webpage
     container.innerHTML= tableHTML;
+       //print errors
     } catch (error) {
         console.error(error);
         container.innerHTML ='<p style ="color:red">Data failed to load.</p>';

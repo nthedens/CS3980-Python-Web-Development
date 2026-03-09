@@ -5,7 +5,7 @@ class Album(BaseModel):
     id: int
     title: str
     artist: str
-    year: int
+    year: int =0
     listen_format: str  # e.g., "Vinyl", "CD", "Digital"
     priority: bool # how urgent to listen (Reccomendation or personal interest)
 
@@ -13,7 +13,7 @@ class Album(BaseModel):
 class AlbumCreate(BaseModel):
     title: str
     artist: str
-    year: int
+    year: int =0 
     listen_format: str
     priority: bool =False
 
@@ -22,7 +22,7 @@ class ListenedAlbum(BaseModel):
     id: int
     title: str
     artist: str
-    year: int
+    year: int =0
     listen_format: str 
     rating: float
 

@@ -1,0 +1,55 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Album Queue</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <h1>Album Queue</h1>
+        
+        <!-- Updated Form Structure -->
+        <form id="add-album-form">
+            <h2 id="form-title">Add to Queue</h2>
+            <div class="form-grid">
+                <!--Text Input for Album details-->
+                <input type="text" id="title" placeholder="Album Title" required class="full-width">
+                <input type="text" id="artist" placeholder="Artist" required>
+                <input type="number" id="year" placeholder="Year">
+                <!--Drop down menu for listening form-->
+                <select id="listen_format" required>
+                    <option value="" disabled selected>Music Format</option>
+                    <option value="Digital">Digital</option>
+                    <option value="Vinyl">Vinyl</option>
+                    <option value="CD">CD</option>
+                    <option value="Cassette">Cassette</option>
+                </select>
+                <!-- check box for priority-->
+                <div class="priority-input">
+                    <input type="checkbox" id="priority">
+                    <label for="priority">Priority Album</label>
+                </div>
+                
+                <!-- Button Container -->
+                <div class="form-buttons full-width">
+                    <button type="submit" id="submit-btn">Add Album</button>
+                </div>
+            </div>
+        </form>
+        <!--Albums lists-->
+        <div class="list-section">
+            <h2>Listening Queue</h2>
+            <div id="album-list"></div>
+        </div>
+
+        <div class="list-section">
+            <h2>Listened Albums</h2>
+            <div id="listened-album-list"></div>
+        </div>
+    </div>
+    <script src="script.js" defer></script>
+</body>
+</html>

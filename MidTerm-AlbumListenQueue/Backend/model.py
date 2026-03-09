@@ -16,3 +16,15 @@ class AlbumCreate(BaseModel):
     year: int
     listen_format: str
     priority: bool =False
+
+
+class ListenedAlbum(BaseModel):
+    id: int
+    title: str
+    artist: str
+    year: int
+    listen_format: str 
+    rating: float
+
+class AlbumRating(BaseModel):
+    rating: float

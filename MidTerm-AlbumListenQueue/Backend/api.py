@@ -1,8 +1,8 @@
 #api.py
 from fastapi import APIRouter,HTTPException
 from typing import List
-from Backend.model import Album, AlbumCreate
-from Backend.database import album_list
+from Backend.model import Album, AlbumCreate,ListenedAlbum, AlbumRating
+from Backend.database import album_list,listened_album_list
 
 router=APIRouter()
 
@@ -57,3 +57,38 @@ async def toggle_priority(album_id :int):
             album.priority = not album.priority
             return album
     raise HTTPException(status_code=404, detail="Album not found")
+
+@router.get("/listened-albums", response_model=List[ListenedAlbum])
+async def get_listened_albums():
+    """Retrieve all albums from the listened-to list."""
+    return sorted(listened_album_list, key=lambda x: x.rating, reverse=True)
+
+
+@router.post("/albums/{album_id}/mark-as-listened", response_model=ListenedAlbum)
+async def mark_album_as_listened(album_id: int, rating_data: AlbumRating):
+    """Move an album from the listening queue to the listened-to list."""
+    album_to_move = None
+
+    for album in album_list:
+        if album.id == album_id:
+            album_to_move = album
+            break
+
+    if not album_to_move:
+        raise HTTPException(status_code=404, detail="Album not found in listening queue")
+
+    album_list.remove(album_to_move)
+
+    new_listened_id=max((album.id for album in listened_album_list),default=0) + 1 
+
+    new_listened_album = ListenedAlbum(
+        id=new_listened_id,
+        title=album_to_move.title,
+        artist=album_to_move.artist,
+        year=album_to_move.year,
+        listen_format=album_to_move.listen_format,
+        rating=rating_data.rating
+    )
+
+    listened_album_list.append(new_listened_album)
+    return new_listened_album

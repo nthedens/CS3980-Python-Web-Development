@@ -17,8 +17,8 @@ async def get_album_from_id(album_id: int):
     for album in album_list:
         if album.id == album_id:
             return album
-        else:
-            raise HTTPException(status_code=404, detail="Album not found")
+
+    raise HTTPException(status_code=404, detail="Album not found")
 
 #Create album 
 @router.post("/albums", response_model=Album)
@@ -31,7 +31,7 @@ async def create_album(album_data:AlbumCreate):
 
 
 #Update existing album
-@router.post("/albums/{album_id}", response_model=Album)
+@router.put("/albums/{album_id}", response_model=Album)
 async def update_album(album_id: int, album_update : AlbumCreate):
     for i, album in enumerate(album_list):
         if album.id == album_id:

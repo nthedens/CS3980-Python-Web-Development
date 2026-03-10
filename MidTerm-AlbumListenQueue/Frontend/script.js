@@ -126,7 +126,44 @@ async function fetchAndRenderQueue() {
             console.error("Error marking as listened:", error);
         }
     }
+    async function startEdit(albumId) {
+        try {
+            const response = await fetch(`${API_URL}/albums/${albumId}`);
+            if (!response.ok) throw new Error('Failed to fetch album details');
+            const album = await response.json();
 
+            document.getElementById('title').value = album.title;
+            document.getElementById('artist').value = album.artist;
+
+            let yearValue = album.year;
+            if (album.year == 0) {
+                yearValue = '';
+            }
+            document.getElementById('year').value = yearValue;
+
+            document.getElementById('listen_format').value = album.listen_format;
+            document.getElementById('priority').checked = album.priority;
+
+            editAlbumId = albumId;
+            document.getElementById('form-title').innerText = `Edit Album: ${album.title}`;
+            document.getElementById('submit-btn').innerText = 'Update Album';
+            document.getElementById('cancel-edit-btn').style.display = 'block';
+            
+        } catch (error) {
+            console.error("Error starting edit:", error);
+        }
+        
+    }
+
+    function cancelEdit(){
+        //reset variable
+        editAlbumId = undefined;
+
+        addAlbumForm.reset();
+        document.getElementById('form-title').innerText = `Add to Queue`;
+        document.getElementById('submit-btn').innerText = 'Add Album';
+        document.getElementById('cancel-edit-btn').style.display = 'none';
+    }
 
 
 
@@ -141,4 +178,12 @@ async function fetchAndRenderQueue() {
         
     }
 
-    
+    async function togglePriority(albumId) {
+        try{
+            await fetch(`${API_URL}/albums/${albumId}/priority`, {method: 'PATCH'});
+            fetchAndRenderQueue();
+        }catch(error){
+            console.error("Error updating priority:", error)
+        }
+        
+    }

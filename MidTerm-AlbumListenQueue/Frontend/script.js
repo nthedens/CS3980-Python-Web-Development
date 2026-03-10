@@ -1,5 +1,5 @@
 /* script.js */
-(function(){
+
 const API_URL = 'http://127.0.0.1:8000';
 
 const albumListDiv = document.getElementById('album-list');
@@ -102,4 +102,43 @@ async function fetchAndRenderQueue() {
         console.error("Failed to fetch listened albums:", error);
     }
  }
-})();
+    async function markAsListened(albumId, title) {
+        let rating;
+        while (true) {
+            const ratingInput = prompt(`You listened to "${title}"! Please give it a rating from 1 to 10.`);
+            if (ratingInput === null) return; 
+
+            rating = parseFloat(ratingInput);
+            if (!isNaN(rating) && rating >= 1 && rating <= 10) break;
+            alert("Invalid rating. Please enter a number between 1 and 10.");
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/albums/${albumId}/mark-as-listened`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rating: rating })
+            });
+            if (!response.ok) throw new Error('Failed to mark album as listened.');
+            fetchAndRenderQueue();
+            fetchAndRenderListened();
+        } catch (error) {
+            console.error("Error marking as listened:", error);
+        }
+    }
+
+
+
+
+    async function deleteAlbum(albumId) {
+        if (!confirm('Are you sure you want to remove this album')) return;
+        try {
+            await fetch(`${API_URL}/albums/${albumId}`,{method: 'DELETE'});
+            fetchAndRenderQueue();
+        }catch(error){
+            console.error("Error deleteing album:", error);
+        }
+        
+    }
+
+    

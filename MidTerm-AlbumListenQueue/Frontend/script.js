@@ -8,6 +8,7 @@ const addAlbumForm = document.getElementById('add-album-form');
 //track if currently editing the album
 let editAlbumId = undefined
 
+// on load, fetch all data
 document.addEventListener('DOMContentLoaded', () => {
     fetchAndRenderQueue();
     fetchAndRenderListened();
@@ -18,7 +19,7 @@ async function fetchAndRenderQueue() {
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const albums = await response.json()
 
-    // inital declatraation 
+    // initial declaration 
     albumListDiv.innerHTML = ''
 
     // run through each album in database for listening
@@ -37,7 +38,7 @@ async function fetchAndRenderQueue() {
         if (album.year ==0){
             yearText = 'N/A';
         }
-
+        // create new entry on page and add its controls
         albumItem.innerHTML = `
             <div class="album-details">
                 <span class="album-title">${album.title}</span>
@@ -84,7 +85,7 @@ async function fetchAndRenderQueue() {
         if (album.year ==0){
             yearText = 'N/A';
         }
-
+        // displayed reviewed albums
         listenedItem.innerHTML =`
             <div class="album-details">
                 <span class="album-title">${album.title}</span>
@@ -102,6 +103,8 @@ async function fetchAndRenderQueue() {
         console.error("Failed to fetch listened albums:", error);
     }
  }
+
+    // mark when an album is complete and get rating
     async function markAsListened(albumId, title) {
         let rating;
         while (true) {
@@ -112,7 +115,7 @@ async function fetchAndRenderQueue() {
             if (!isNaN(rating) && rating >= 1 && rating <= 10) break;
             alert("Invalid rating. Please enter a number between 1 and 10.");
         }
-
+        //post rating for album to rating database
         try {
             const response = await fetch(`${API_URL}/albums/${albumId}/mark-as-listened`, {
                 method: 'POST',
@@ -126,25 +129,31 @@ async function fetchAndRenderQueue() {
             console.error("Error marking as listened:", error);
         }
     }
+
     async function startEdit(albumId) {
+        // get details of album to edit 
         try {
             const response = await fetch(`${API_URL}/albums/${albumId}`);
             if (!response.ok) throw new Error('Failed to fetch album details');
             const album = await response.json();
-
+            
+            // pull detail
             document.getElementById('title').value = album.title;
             document.getElementById('artist').value = album.artist;
-
+            
+            // check if 0 blank if it is 
             let yearValue = album.year;
             if (album.year == 0) {
                 yearValue = '';
             }
             document.getElementById('year').value = yearValue;
 
+        
             document.getElementById('listen_format').value = album.listen_format;
             document.getElementById('priority').checked = album.priority;
 
             editAlbumId = albumId;
+            // change text to task
             document.getElementById('form-title').innerText = `Edit Album: ${album.title}`;
             document.getElementById('submit-btn').innerText = 'Update Album';
             document.getElementById('cancel-edit-btn').style.display = 'block';
@@ -173,7 +182,7 @@ async function fetchAndRenderQueue() {
             await fetch(`${API_URL}/albums/${albumId}`,{method: 'DELETE'});
             fetchAndRenderQueue();
         }catch(error){
-            console.error("Error deleteing album:", error);
+            console.error("Error deleting album:", error);
         }
         
     }
@@ -187,3 +196,55 @@ async function fetchAndRenderQueue() {
         }
         
     }
+
+
+    addAlbumForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    
+    const yearInput = document.getElementById('year').value;
+    // blank =0-> N/A else take year
+    const yearValue = yearInput === '' ? 0 : parseInt(yearInput);
+    //pull data from user input boxes
+    const albumData = {
+        title: document.getElementById('title').value,
+        artist: document.getElementById('artist').value,
+        year: yearValue,
+        listen_format: document.getElementById('listen_format').value,
+        priority: document.getElementById('priority').checked
+    };
+
+    try {
+        // Checks if editAlbumId is a number. Undefined evaluates to false.
+
+         // EDIT MODE: if editing use put not post update the album
+        if (editAlbumId) {
+            
+            //send textbox input to edit 
+            const response = await fetch(`${API_URL}/albums/${editAlbumId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(albumData)
+            });
+            if (!response.ok) throw new Error('Failed to update album');
+            cancelEdit();
+        } else {
+            // ADD MODE: POST Request add album
+            const response = await fetch(`${API_URL}/albums`, {
+                // send text box info to post to add album
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                // change from object to string 
+                body: JSON.stringify(albumData)
+        
+            });
+            if (!response.ok) throw new Error('Failed to create album');
+            addAlbumForm.reset();
+        }
+        fetchAndRenderQueue();
+    } catch (error) {
+        console.error("Error saving album:", error);
+    }
+    });
+
+

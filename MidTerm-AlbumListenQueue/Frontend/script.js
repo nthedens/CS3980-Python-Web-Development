@@ -6,6 +6,7 @@ const albumListDiv = document.getElementById('album-list');
 const listenedAlbumListDiv = document.getElementById('listened-album-list');
 const addAlbumForm = document.getElementById('add-album-form');
 //track if currently editing the album
+// undefined in add mode
 let editAlbumId = undefined
 
 // on load, fetch all data
@@ -13,27 +14,29 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchAndRenderQueue();
     fetchAndRenderListened();
 });
+
+// create queue and buttons
 async function fetchAndRenderQueue() {
  try {
     const response = await fetch(`${API_URL}/albums`)
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const albums = await response.json()
 
-    // initial declaration 
+    // clear and re render
     albumListDiv.innerHTML = ''
 
     // run through each album in database for listening
     albums.forEach(album => {
         const albumItem = document.createElement('div');
 
-        // if priority adds priority asap to div class
+        // if priority adds priority and highlights
         albumItem.className =`album-item ${album.priority ? 'priority-asap' : ''}`;
 
         // starting text
         const priorityText =album.priority ? 'Listen First' : 'Listen Later';
         const priorityButtonClass = album.priority ? 'priority-asap' : '';
 
-        // mark not applicable if year is 0/ not given
+        // mark not applicable if year is 0/N/A not given
         let yearText= album.year;
         if (album.year ==0){
             yearText = 'N/A';
@@ -75,6 +78,8 @@ async function fetchAndRenderQueue() {
         
         listenedAlbumListDiv.innerHTML= '';
 
+
+        // API gives listens albumed sorting by highest rating
         listenedAlbums.forEach(album =>{
            const listenedItem = document.createElement('div');
            listenedItem.className = 'listened-item';
@@ -107,6 +112,7 @@ async function fetchAndRenderQueue() {
     // mark when an album is complete and get rating
     async function markAsListened(albumId, title) {
         let rating;
+        // loop until user gives rating 1-10 or cancels
         while (true) {
             const ratingInput = prompt(`You listened to "${title}"! Please give it a rating from 1 to 10.`);
             if (ratingInput === null) return; 
@@ -123,6 +129,8 @@ async function fetchAndRenderQueue() {
                 body: JSON.stringify({ rating: rating })
             });
             if (!response.ok) throw new Error('Failed to mark album as listened.');
+
+            // refresh lists (add album to one list, remove from the other)
             fetchAndRenderQueue();
             fetchAndRenderListened();
         } catch (error) {
@@ -137,11 +145,11 @@ async function fetchAndRenderQueue() {
             if (!response.ok) throw new Error('Failed to fetch album details');
             const album = await response.json();
             
-            // pull detail
+            // put data in the current edit field
             document.getElementById('title').value = album.title;
             document.getElementById('artist').value = album.artist;
             
-            // check if 0 blank if it is 
+            // check if 0 blank if it is display blank
             let yearValue = album.year;
             if (album.year == 0) {
                 yearValue = '';
@@ -151,7 +159,7 @@ async function fetchAndRenderQueue() {
         
             document.getElementById('listen_format').value = album.listen_format;
             document.getElementById('priority').checked = album.priority;
-
+            // swtich the id to edit id to maintain original id
             editAlbumId = albumId;
             // change text to task
             document.getElementById('form-title').innerText = `Edit Album: ${album.title}`;
@@ -165,7 +173,7 @@ async function fetchAndRenderQueue() {
     }
 
     function cancelEdit(){
-        //reset variable
+        //reset to add mode
         editAlbumId = undefined;
 
         addAlbumForm.reset();
@@ -177,7 +185,7 @@ async function fetchAndRenderQueue() {
 
 
     async function deleteAlbum(albumId) {
-        if (!confirm('Are you sure you want to remove this album')) return;
+        if (!confirm('Are you sure you want to remove this album?')) return;
         try {
             await fetch(`${API_URL}/albums/${albumId}`,{method: 'DELETE'});
             fetchAndRenderQueue();
@@ -189,6 +197,7 @@ async function fetchAndRenderQueue() {
 
     async function togglePriority(albumId) {
         try{
+            // flip priority, then send and update window
             await fetch(`${API_URL}/albums/${albumId}/priority`, {method: 'PATCH'});
             fetchAndRenderQueue();
         }catch(error){
@@ -198,7 +207,7 @@ async function fetchAndRenderQueue() {
     }
 
 
-    addAlbumForm.addEventListener('submit', async (event) => {
+addAlbumForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
     
@@ -227,7 +236,7 @@ async function fetchAndRenderQueue() {
                 body: JSON.stringify(albumData)
             });
             if (!response.ok) throw new Error('Failed to update album');
-            cancelEdit();
+            cancelEdit(); // change to add mode when complete
         } else {
             // ADD MODE: POST Request add album
             const response = await fetch(`${API_URL}/albums`, {
@@ -239,9 +248,9 @@ async function fetchAndRenderQueue() {
         
             });
             if (!response.ok) throw new Error('Failed to create album');
-            addAlbumForm.reset();
+            addAlbumForm.reset(); // clear inputs when added
         }
-        fetchAndRenderQueue();
+        fetchAndRenderQueue(); //update windo
     } catch (error) {
         console.error("Error saving album:", error);
     }

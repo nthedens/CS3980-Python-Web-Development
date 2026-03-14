@@ -27,5 +27,7 @@ style defines the look the of html objects and is heavily based around the youtu
 the script file communicates with the backend of the program using the fetch to call for data. The script renders all the entries given from the database and injects them into the html. It implements the logic for each button, such as the edit functionality and prepares and sends the data to the backend to perform the operation, then updates the frontend accordingly. the script also includes small logic check for sentinel value of 0 and displays N/A if a year was not given.
 
 # Extra notes
-Images of the frontend are shown below 
+ Links Images of the frontend are shown below, as github was having issue uploading to the readme
 
+[Base window](base.png)
+[editing window](edit.png)

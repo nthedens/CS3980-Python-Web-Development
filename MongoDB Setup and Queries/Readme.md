@@ -6,4 +6,5 @@ Find all movies with runtime greater than 200 minutes in year 1983
 
 
  Find all movies after year 2014 with imdb rating greater than 9.
+ 
 <img width="559" height="527" alt="Query2Result" src="https://github.com/user-attachments/assets/bf0ee442-d118-41c3-a89a-a1b3804ee729" />

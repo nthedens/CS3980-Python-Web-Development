@@ -5,6 +5,11 @@ import api
 
 app = FastAPI(title="AlbumQueue")
 
+# Silence Chrome DevTools background discovery errors
+@app.get("/.well-known/appspecific/com.chrome.devtools.json")
+async def silence_chrome_errors():
+    return {}
+
 @app.get("/")
 async def home():
     return FileResponse("./Frontend/index.html")

@@ -1,34 +1,64 @@
-from pydantic import BaseModel
+from typing import Optional, List, Annotated
+from pydantic import BaseModel, EmailStr, Field, BeforeValidator
 
-# The main Album API
+# Helper to handle MongoDB ObjectId
+PyObjectId = Annotated[str, BeforeValidator(str)]
+
+class User(BaseModel):
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    username: str
+    email: EmailStr
+    hashed_password: str
+
+    class Config:
+        populate_by_name = True
+
 class Album(BaseModel):
-    id: int
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
     title: str
     artist: str
-    year: int =0  # default value for unknow year
-    listen_format: str  # e.g., "Vinyl", "CD", "Digital"
-    priority: bool # how urgent to listen (listen now  or later)
+    year: int = 0
+    listen_format: str
+    priority: bool = False
+    owner_id: Optional[str] = None
 
-# model creating new albums,ID is not needed
+    class Config:
+        populate_by_name = True
+
 class AlbumCreate(BaseModel):
     title: str
     artist: str
-    year: int =0 
+    year: int = 0 
     listen_format: str
-    priority: bool =False #default false priority (not really needed but just in case)
-
+    priority: bool = False
 
 class ListenedAlbum(BaseModel):
-    id: int
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
     title: str
     artist: str
-    year: int =0
+    year: int = 0
     listen_format: str 
-    rating: float # score for album
+    rating: float
+    owner_id: Optional[str] = None
 
-# used for POST body for mark as listened
-# allows to check for vaild input without the rest of the album info needing to be sent, 
-# the album info will just be moved to the proper spot between the 2 databases 
-# keeps so it just needs id and float
+    class Config:
+        populate_by_name = True
+
 class AlbumRating(BaseModel):
     rating: float
+
+class UserCreate(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: Optional[str] = None

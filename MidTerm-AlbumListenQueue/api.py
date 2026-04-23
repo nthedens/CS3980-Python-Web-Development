@@ -1,104 +1,121 @@
-#api.py
-from fastapi import APIRouter,HTTPException
+from fastapi import APIRouter, HTTPException, Depends, status
 from typing import List
-from model import Album, AlbumCreate,ListenedAlbum, AlbumRating
-from database import album_list,listened_album_list
+from model import Album, AlbumCreate, ListenedAlbum, AlbumRating, User, UserCreate, UserLogin, Token
+from auth import get_password_hash, verify_password, create_access_token, get_current_user, db
+from datetime import timedelta
+from config import settings
+from bson import ObjectId
 
-router=APIRouter()
+router = APIRouter()
 
-#read all albums
-@router.get("/albums", response_model=List[Album])
-async def get_all_albums():
-    return album_list
+# --- Auth Endpoints ---
 
-# read album by ID
-@router.get("/albums/{album_id}", response_model=Album)
-async def get_album_from_id(album_id: int):
-    for album in album_list:
-        if album.id == album_id:
-            return album
-
-    raise HTTPException(status_code=404, detail="Album not found")
-
-#Create album 
-@router.post("/albums", response_model=Album)
-async def create_album(album_data:AlbumCreate):
-    # create new ID make id 1 if no albums
-    new_id=max((album.id for album in album_list),default=0) + 1 
-    new_album= Album(id=new_id, **album_data.model_dump())
-    album_list.append(new_album)
-    return new_album
-
-
-
-
-#Update existing album
-@router.put("/albums/{album_id}", response_model=Album)
-async def update_album(album_id: int, album_update : AlbumCreate):
-    for i, album in enumerate(album_list):
-        if album.id == album_id:
-            # Reconstruct to validate but maintain original ID
-            updated_album = Album(id=album_id, **album_update.model_dump())
-            album_list[i]  = updated_album
-            return updated_album
+@router.post("/register", response_model=User)
+def register(user_data: UserCreate):
+    if db.users.find_one({"username": user_data.username}):
+        raise HTTPException(status_code=400, detail="Username already registered")
     
-    raise HTTPException(status_code=404, detail="Album not found")
+    hashed_password = get_password_hash(user_data.password)
+    user_dict = {
+        "username": user_data.username,
+        "email": user_data.email,
+        "hashed_password": hashed_password
+    }
+    result = db.users.insert_one(user_dict)
+    user_dict["_id"] = result.inserted_id
+    return User(**user_dict)
 
+@router.post("/login", response_model=Token)
+def login(user_data: UserLogin):
+    user_dict = db.users.find_one({"username": user_data.username})
+    if not user_dict or not verify_password(user_data.password, user_dict["hashed_password"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user_dict["username"]}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
 
-# removes album
+# --- Album Endpoints ---
+
+@router.get("/albums", response_model=List[Album])
+def get_all_albums(current_user: User = Depends(get_current_user)):
+    albums = list(db.albums.find({"owner_id": str(current_user.id)}))
+    return [Album(**a) for a in albums]
+
+@router.get("/albums/{album_id}", response_model=Album)
+def get_album_from_id(album_id: str, current_user: User = Depends(get_current_user)):
+    album_dict = db.albums.find_one({"_id": ObjectId(album_id), "owner_id": str(current_user.id)})
+    if not album_dict:
+        raise HTTPException(status_code=404, detail="Album not found")
+    return Album(**album_dict)
+
+@router.post("/albums", response_model=Album)
+def create_album(album_data: AlbumCreate, current_user: User = Depends(get_current_user)):
+    new_album_dict = album_data.model_dump()
+    new_album_dict["owner_id"] = str(current_user.id)
+    result = db.albums.insert_one(new_album_dict)
+    new_album_dict["_id"] = result.inserted_id
+    return Album(**new_album_dict)
+
+@router.put("/albums/{album_id}", response_model=Album)
+def update_album(album_id: str, album_update: AlbumCreate, current_user: User = Depends(get_current_user)):
+    filter_query = {"_id": ObjectId(album_id), "owner_id": str(current_user.id)}
+    update_data = {"$set": album_update.model_dump()}
+    result = db.albums.update_one(filter_query, update_data)
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Album not found")
+    
+    updated_album = db.albums.find_one(filter_query)
+    return Album(**updated_album)
+
 @router.delete("/albums/{album_id}", status_code=204)
-async def delete_album(album_id :int):
-    for album in album_list:
-        if album.id == album_id:
-            album_list.remove(album)
-            return {"message": f"Album with id {album_id} has been deleted."}
-    raise HTTPException(status_code=404, detail="Album not found")
+def delete_album(album_id: str, current_user: User = Depends(get_current_user)):
+    result = db.albums.delete_one({"_id": ObjectId(album_id), "owner_id": str(current_user.id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Album not found")
+    return None
 
-
-
-# update priority of an album
 @router.patch("/albums/{album_id}/priority", response_model=Album)
-async def toggle_priority(album_id :int):
-    # change priority of album frontend update after this is performed
-    for album in album_list:
-        if album.id == album_id:
-            album.priority = not album.priority
-            return album
-    raise HTTPException(status_code=404, detail="Album not found")
+def toggle_priority(album_id: str, current_user: User = Depends(get_current_user)):
+    filter_query = {"_id": ObjectId(album_id), "owner_id": str(current_user.id)}
+    album = db.albums.find_one(filter_query)
+    if not album:
+        raise HTTPException(status_code=404, detail="Album not found")
+    
+    db.albums.update_one(filter_query, {"$set": {"priority": not album["priority"]}})
+    updated_album = db.albums.find_one(filter_query)
+    return Album(**updated_album)
 
 @router.get("/listened-albums", response_model=List[ListenedAlbum])
-async def get_listened_albums():
-    """Retrieve all albums from the listened-to list."""
-    # give sorted by rating 
-    return sorted(listened_album_list, key=lambda x: x.rating, reverse=True)
-
+def get_listened_albums(current_user: User = Depends(get_current_user)):
+    albums = list(db.listened_albums.find({"owner_id": str(current_user.id)}))
+    sorted_albums = sorted(albums, key=lambda x: x["rating"], reverse=True)
+    return [ListenedAlbum(**a) for a in sorted_albums]
 
 @router.post("/albums/{album_id}/mark-as-listened", response_model=ListenedAlbum)
-async def mark_album_as_listened(album_id: int, rating_data: AlbumRating):
-    # find and remove from queue
-    album_to_move = None
-    for album in album_list:
-        if album.id == album_id:
-            album_to_move = album
-            break
-
+def mark_album_as_listened(album_id: str, rating_data: AlbumRating, current_user: User = Depends(get_current_user)):
+    album_to_move = db.albums.find_one({"_id": ObjectId(album_id), "owner_id": str(current_user.id)})
     if not album_to_move:
         raise HTTPException(status_code=404, detail="Album not found in listening queue")
 
-    album_list.remove(album_to_move)
+    new_listened_dict = {
+        "title": album_to_move["title"],
+        "artist": album_to_move["artist"],
+        "year": album_to_move["year"],
+        "listen_format": album_to_move["listen_format"],
+        "rating": rating_data.rating,
+        "owner_id": str(current_user.id)
+    }
 
-    # create listened ID for album
-    new_listened_id=max((album.id for album in listened_album_list),default=0) + 1 
-
-    # add details to listend list
-    new_listened_album = ListenedAlbum(
-        id=new_listened_id,
-        title=album_to_move.title,
-        artist=album_to_move.artist,
-        year=album_to_move.year,
-        listen_format=album_to_move.listen_format,
-        rating=rating_data.rating
-    )
-
-    listened_album_list.append(new_listened_album)
-    return new_listened_album
+    result = db.listened_albums.insert_one(new_listened_dict)
+    db.albums.delete_one({"_id": ObjectId(album_id)})
+    
+    new_listened_dict["_id"] = result.inserted_id
+    return ListenedAlbum(**new_listened_dict)

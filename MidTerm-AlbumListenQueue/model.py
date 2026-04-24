@@ -5,16 +5,17 @@ from pydantic import BaseModel, EmailStr, Field, BeforeValidator
 PyObjectId = Annotated[str, BeforeValidator(str)]
 
 class User(BaseModel):
-    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    id: Optional[PyObjectId] = Field(validation_alias="_id", default=None)
     username: str
     email: EmailStr
     hashed_password: str
 
-    class Config:
-        populate_by_name = True
+    model_config = {
+        "populate_by_name": True,
+    }
 
 class Album(BaseModel):
-    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    id: Optional[PyObjectId] = Field(validation_alias="_id", default=None)
     title: str
     artist: str
     year: int = 0
@@ -22,8 +23,9 @@ class Album(BaseModel):
     priority: bool = False
     owner_id: Optional[str] = None
 
-    class Config:
-        populate_by_name = True
+    model_config = {
+        "populate_by_name": True,
+    }
 
 class AlbumCreate(BaseModel):
     title: str
@@ -33,7 +35,7 @@ class AlbumCreate(BaseModel):
     priority: bool = False
 
 class ListenedAlbum(BaseModel):
-    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    id: Optional[PyObjectId] = Field(validation_alias="_id", default=None)
     title: str
     artist: str
     year: int = 0
@@ -41,8 +43,9 @@ class ListenedAlbum(BaseModel):
     rating: float
     owner_id: Optional[str] = None
 
-    class Config:
-        populate_by_name = True
+    model_config = {
+        "populate_by_name": True,
+    }
 
 class AlbumRating(BaseModel):
     rating: float

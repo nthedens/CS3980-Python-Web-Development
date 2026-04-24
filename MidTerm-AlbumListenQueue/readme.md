@@ -4,7 +4,7 @@
   mark them as listened, and provide ratings. The program features a FastAPI backend integrated with MongoDB for
   persistent storage and a responsive HTML/CSS/JavaScript frontend.
 
-  ###Key Transitions: Moving to MongoDB & Auth
+  ### Key Transitions: MongoDB & Auth
    - The program now has persistent storage, authentication, and pairing data with users
 
   ## Backend Components

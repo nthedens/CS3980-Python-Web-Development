@@ -54,9 +54,12 @@
 ## extra notes
 ### image of need login window:
 <img width="958" height="750" alt="image" src="https://github.com/user-attachments/assets/f66d6fb0-75fa-4ae6-89d3-d138089efbcc" />
-### New window appearance
+
+### New window appearance:
+
 <img width="1340" height="906" alt="image" src="https://github.com/user-attachments/assets/3444f4ec-d033-4af6-a615-069a28ecfe73" />
-### MongoDB end of App
+
+### MongoDB end of App:
 
 <img width="1546" height="356" alt="image" src="https://github.com/user-attachments/assets/d54151f5-5ecd-43ae-b01f-d6be369f40fa" />
 
